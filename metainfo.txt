@@ -30,3 +30,5 @@ Author : Elizaveta Zinovyeva
 Submitted :  Tue, Jun 18 2019 by Elizaveta Zinovyeva
 
 Datafile : raw_data folder, data folder
+
+See also : 'session_info.txt contains information on python package versioning'
