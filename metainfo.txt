@@ -5,10 +5,7 @@ Published in : 'Antisocial Online Behavior Detection using Deep Learning'
 Description : 'Antisocial Online behaivor detection. Contains data preparation for textual data in code_1_preparation.ipynb.
 Moreover includes benchmarking on different models, traditional machine learning methods: ridge regression, SVM, random
 forest, lightGBM, as well as deep learning models: GRU, LSTM, BGRU (bidirectional), BLSTM, BGRU + attention, BGRU + global
-average pooling, BGRU + global maximum pooling. Furthermore contains semi-supervised DL models: self-training/pseudo labeling,
-random assignment, tokenization on larger data set, rule-based approach,  cluster and label. Each notebook except 
-code_1_preparation contains a model (or multiple), it reads data from the data folder, processes cross validation, 
-as well as training on full training data and finally saves the weights.'
+average pooling, BGRU + global maximum pooling. Furthermore contains HAN and psHAN
 
 Keywords : 
  - cyber-bullying
@@ -27,7 +24,7 @@ Keywords :
 
 Author : Elizaveta Zinovyeva
 
-Submitted :  Tue, Jun 18 2019 by Elizaveta Zinovyeva
+Submitted :  Tue, July 31 2019 by Elizaveta Zinovyeva
 
 Datafile : raw_data folder, data folder
 
