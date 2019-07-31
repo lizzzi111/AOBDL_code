@@ -1,10 +1,32 @@
+import numpy as np
+import pandas as pd
+import keras
 from keras.layers import Embedding, SpatialDropout1D
-from keras.models import Model, Sequential
+from keras.layers import Dense, Input, GRU, LSTM 
+from keras.layers import Bidirectional, Dropout, GlobalMaxPool1D 
+from keras.layers import CuDNNLSTM, CuDNNGRU, GlobalAveragePooling1D
+from keras.layers import Conv1D, GlobalMaxPooling1D, TimeDistributed
 from keras.layers import Dense, Embedding, Input
+
+from keras.models import Model, Sequential
 from keras.optimizers import RMSprop
 import keras.backend as K
-from keras.layers import Dense, Input, GRU, LSTM, Bidirectional, Dropout, CuDNNLSTM, CuDNNGRU, GlobalAveragePooling1D, GlobalMaxPool1D
 from keras.engine.topology import Layer, InputSpec
+from keras.models import load_model
+
+from keras.preprocessing import text, sequence
+from keras import initializers as initializers, regularizers, constraints
+
+from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import roc_auc_score, average_precision_score
+
+from nltk import tokenize 
+import nltk
+nltk.download('punkt')
+
+#############################################
+#####           ATTENTION              ######
+#############################################
 
 def dot_product(x, kernel):
     if K.backend() == 'tensorflow':
@@ -81,87 +103,356 @@ class AttentionWithContext(Layer):
 
     def compute_output_shape(self, input_shape):
         return input_shape[0], input_shape[-1]
-      
-      
-      
-class AttLayer(Layer):
-    def __init__(self, attention_dim):
-        self.init = initializers.get('normal')
-        self.supports_masking = True
-        self.attention_dim = attention_dim
-        super(AttLayer, self).__init__()
 
-    def build(self, input_shape):
-        assert len(input_shape) == 3
-        self.W = K.variable(self.init((input_shape[-1], self.attention_dim)))
-        self.b = K.variable(self.init((self.attention_dim, )))
-        self.u = K.variable(self.init((self.attention_dim, 1)))
-        self.trainable_weights = [self.W, self.b, self.u]
-        super(AttLayer, self).build(input_shape)
+#############################################
+#####              MODELS              ######
+#############################################  
 
-    def compute_mask(self, inputs, mask=None):
-        return mask
-
-    def call(self, x, mask=None):
-        # size of x :[batch_size, sel_len, attention_dim]
-        # size of u :[batch_size, attention_dim]
-        # uit = tanh(xW+b)
-        uit = K.tanh(K.bias_add(K.dot(x, self.W), self.b))
-        ait = K.dot(uit, self.u)
-        ait = K.squeeze(ait, -1)
-
-        ait = K.exp(ait)
-
-        if mask is not None:
-            # Cast the mask to floatX to avoid float64 upcasting in theano
-            ait *= K.cast(mask, K.floatx())
-        ait /= K.cast(K.sum(ait, axis=1, keepdims=True) + K.epsilon(), K.floatx())
-        ait = K.expand_dims(ait)
-        weighted_input = x * ait
-        output = K.sum(weighted_input, axis=1)
-
-        return output
-
-    def compute_output_shape(self, input_shape):
-        return (input_shape[0], input_shape[-1])
-
-def model_(model_type = 'BGRU_avg', **kwargs):
-  
-  if K.backend == 'tensorflow':        
+def gru_keras(max_features, maxlen, bidirectional, dropout_rate, embed_dim, rec_units,mtype='GRU', reduction = None):
+    
+    if K.backend == 'tensorflow':        
         K.clear_session()
-  
-  input_layer     = Input(shape=(kwargs[maxlen],))
-  embedding_layer = Embedding(kwargs[max_features], output_dim=kwargs[embed_dim], trainable=True)(input_layer)
-  x               = SpatialDropout1D(kwargs[dropout_rate])(embedding_layer)
+        
+    input_layer     = Input(shape=(maxlen,))
+    embedding_layer = Embedding(max_features, output_dim=embed_dim, trainable=True)(input_layer)
+    x               = SpatialDropout1D(dropout_rate)(embedding_layer)
     
-  
-  if model_type == 'GRU':
-    x = CuDNNGRU(units=kwargs[rec_units], return_sequences=True)(x)
-  elif model_type == 'BGRU':
-    x = Bidirectional(CuDNNGRU(units=kwargs[rec_units], return_sequences=True))(x)
-  elif model_type == 'BGRU_avg':
-    x = Bidirectional(CuDNNGRU(units=kwargs[rec_units], return_sequences=True))(x)
-    x = GlobalAveragePooling1D()(x)
-  elif model_type == 'BGRU_att':
-    x = Bidirectional(CuDNNGRU(units=kwargs[rec_units], return_sequences=True))(x)
-    x = AttentionWithContext()(x)
-  elif model_type == 'BGRU_max':
-    x = Bidirectional(CuDNNGRU(units=kwargs[rec_units], return_sequences=True))(x)
-    x = GlobalMaxPool1D()(x)
-  elif model_type == 'LSTM':
-    x = CuDNNLSTM(units=kwargs[rec_units], return_sequences=True)(x)
-  elif model_type == 'BLSTM':
-    x = Bidirectional(CuDNNLSTM(units=kwargs[rec_units], return_sequences=True))(x)
-  elif model_type == 'CNN':
-    x = Conv1D(kwargs[num_filters], 7, activation='relu', padding='same')(x)
-    x = MaxPooling1D(2)(x)
-    x = Conv1D(kwargs[num_filters], 7, activation='relu', padding='same')(x)
-    x = GlobalMaxPooling1D()(x)
-    
-  output_layer = Dense(1, activation="sigmoid")(x)
-  model = Model(inputs=input_layer, outputs=output_layer)
-  model.compile(loss='binary_crossentropy',
+    if reduction:
+        if mtype   == 'GRU':
+            if bidirectional:
+                x           = Bidirectional(CuDNNGRU(units=rec_units, return_sequences=True))(x)
+            else:
+                x           = CuDNNGRU(units=rec_units, return_sequences=True)(x)
+        elif mtype == 'LSTM':
+            if bidirectional:
+                x           = Bidirectional(CuDNNLSTM(units=rec_units, return_sequences=True))(x)
+            else:
+                x           = CuDNNLSTM(units=rec_units, return_sequences=True)(x) 
+        
+        if reduction == 'average':
+          x = GlobalAveragePooling1D()(x)
+        elif reduction == 'maximum':
+          x = GlobalMaxPool1D()(x)
+        elif reduction == 'attention':
+          x = AttentionWithContext()(x)
+    else: 
+        if mtype   == 'GRU':
+            if bidirectional:
+                x           = Bidirectional(CuDNNGRU(units=rec_units, return_sequences=False))(x)
+            else:
+                x           = CuDNNGRU(units=rec_units, return_sequences=False)(x)
+        elif mtype == 'LSTM':
+            if bidirectional:
+                x           = Bidirectional(CuDNNLSTM(units=rec_units, return_sequences=False))(x)
+            else:
+                x           = CuDNNLSTM(units=rec_units, return_sequences=False)(x) 
+                
+    output_layer = Dense(1, activation="sigmoid")(x)
+    model        = Model(inputs=input_layer, outputs=output_layer)
+    model.compile(loss='binary_crossentropy',
                   optimizer=RMSprop(clipvalue=1, clipnorm=1),
                   metrics=['acc'])
-    #print( model.summary())
-  return model
+    return model
+    
+def make_hat(max_sent_len, max_sent_amount, max_features, embed_dim, rec_units, dropout_rate):
+
+    sentence_input = Input(shape=(max_sent_len,), dtype='int32')
+    embedded_sequences = Embedding(max_features+1, embed_dim, trainable=True)(sentence_input)
+    embedded_sequences = SpatialDropout1D(dropout_rate)(embedded_sequences)
+    l_lstm = Bidirectional(CuDNNGRU(rec_units, return_sequences=True))(embedded_sequences)
+    l_att = AttentionWithContext()(l_lstm)
+    sentEncoder = Model(sentence_input, l_att)
+
+    comment_input = Input(shape=(max_sent_amount, max_sent_len), dtype='int32')
+    comment_encoder = TimeDistributed(sentEncoder)(comment_input)
+    l_lstm_sent = Bidirectional(CuDNNGRU(rec_units, return_sequences=True))(comment_encoder)
+    l_att_sent = AttentionWithContext()(l_lstm_sent)
+
+    preds = Dense(1, activation='sigmoid')(l_att_sent)
+    model = Model(comment_input, preds)
+
+    model.compile(loss='binary_crossentropy',
+                  optimizer=RMSprop(clipvalue=1, clipnorm=1),
+                  metrics=['acc'])
+    return model
+    
+def cnn_keras(max_features, maxlen, dropout_rate, embed_dim, num_filters=300):
+    if K.backend == 'tensorflow':        
+        K.clear_session()
+    input_layer = Input(shape=(maxlen,))
+    embedding_layer = Embedding(max_features, output_dim=embed_dim, trainable=True)(input_layer)
+    x = SpatialDropout1D(dropout_rate)(embedding_layer)
+    x = Conv1D(num_filters, 7, activation='relu', padding='same')(x)
+    x = GlobalMaxPooling1D()(x)
+    output_layer = Dense(1, activation="sigmoid")(x)
+    model = Model(inputs=input_layer, outputs=output_layer)
+    model.compile(loss='binary_crossentropy',
+                  optimizer=RMSprop(clipvalue=1, clipnorm=1),
+                  metrics=['acc'])
+    return model
+
+def dl_model(model_type='BGRU', max_features=40000, embed_dim=50, rec_units=150, dropout_rate=0.25, maxlen=400, max_sent_len=100, max_sent_amount=4):
+                
+    if model_type == 'GRU':
+        return gru_keras(max_features=max_features, maxlen=maxlen, bidirectional=False, mtype='GRU', 
+                         dropout_rate=dropout_rate, embed_dim=embed_dim, rec_units=rec_units)
+    if model_type == 'LSTM':
+        return gru_keras(max_features=max_features, maxlen=maxlen, bidirectional=False, mtype='LSTM', 
+                         dropout_rate=dropout_rate, embed_dim=embed_dim, rec_units=rec_units)
+    if model_type == 'BGRU':
+        return gru_keras(max_features=max_features, maxlen=maxlen, bidirectional=True, mtype='GRU', 
+                         dropout_rate=dropout_rate, embed_dim=embed_dim, rec_units=rec_units)
+    if model_type == 'BLSTM':
+        return gru_keras(max_features=max_features, maxlen=maxlen, bidirectional=True, mtype='LSTM', 
+                         dropout_rate=dropout_rate, embed_dim=embed_dim, rec_units=rec_units)
+    if model_type == 'BGRU_avg':
+        return gru_keras(max_features=max_features, maxlen=maxlen, bidirectional=True, mtype='GRU', 
+                         dropout_rate=dropout_rate, embed_dim=embed_dim, rec_units=rec_units, 
+                         reduction='average')
+    if model_type == 'BGRU_max':
+        return gru_keras(max_features=max_features, maxlen=maxlen, bidirectional=True, mtype='GRU', 
+                         dropout_rate=dropout_rate, embed_dim=embed_dim, rec_units=rec_units, 
+                         reduction='maximum')
+    if model_type == 'BGRU_att':
+        return gru_keras(max_features=max_features, maxlen=maxlen, bidirectional=True, mtype='GRU', 
+                         dropout_rate=dropout_rate, embed_dim=embed_dim, rec_units=rec_units, 
+                         reduction='attention')
+    if model_type == 'CNN': 
+        return cnn_keras(max_features=max_features, maxlen=maxlen, dropout_rate=dropout_rate, embed_dim=embed_dim)
+    if model_type == 'HAN': 
+        return make_hat(max_sent_len=max_sent_len, max_sent_amount=max_sent_amount, max_features=max_features, embed_dim=embed_dim, rec_units=rec_units,dropout_rate=dropout_rate)
+    if model_type == 'psHAN': 
+        return make_hat(max_sent_len=max_sent_len, max_sent_amount=max_sent_amount, max_features=max_features, embed_dim=embed_dim, rec_units=rec_units, dropout_rate=dropout_rate)
+        
+#############################################
+#####            TRAINING              ######
+#############################################
+
+def train_model(X, y,  mtype, cv, nfolds, epochs, cv_models_path, train, X_test=None, y_test=None, rs=42, max_features=40000, maxlen=400, dropout_rate=0.25, rec_units=150, embed_dim=50, batch_size=256, max_sen_len=100, max_sent_amount=4):
+    if cv:
+        kf = StratifiedKFold(n_splits=nfolds, random_state=rs)
+        auc = []
+        roc = []
+
+        for c, (train_index, val_index) in enumerate(kf.split(X, y)):
+            
+            print(f' fold {c}')
+            
+            X_train, X_val = X[train_index], X[val_index]
+            y_train, y_val = y[train_index], y[val_index] 
+            
+            tokenizer = keras.preprocessing.text.Tokenizer(num_words=max_features)
+            tokenizer.fit_on_texts(X_train)
+            
+            if mtype == 'HAN':
+                def clean_str(string):
+                    #string = string.replace(",", ".").replace(";", ".").replace(":", ".").replace("-", ".")
+                    return string.strip().lower()
+                
+                def tok_sentence(s):
+                    temp = tokenizer.texts_to_sequences(s)
+                    if len(temp)==0:
+                        return np.array([0])
+                    return temp
+                    
+                    
+                train_posts = []
+                train_labels = []
+                train_texts = []
+                
+                #TRAIN
+                for i, value in enumerate(X_train):
+                    if(i%10000==0):
+                        print(i)
+                    text = clean_str(value)
+                    train_texts.append(text)
+                    sentences = tokenize.sent_tokenize(text)
+                    sentences = tok_sentence(sentences)
+                    x = len(sentences)<max_sent_amount
+                    while x:
+                        sentences.append(np.array([0])) 
+                        x = len(sentences)<max_sent_amount
+            
+                    if len(sentences)>max_sent_amount:
+                        sentences = sentences[0:max_sent_amount]
+                    sentences = sequence.pad_sequences(sentences, maxlen=max_sen_len)
+            
+                    train_posts.append(sentences)
+                
+                val_posts = []
+                val_labels = []
+                val_texts = []
+            
+                #VAL
+                for i, value in enumerate(X_val):
+                    if(i%10000==0):
+                        print(i)
+                    text = clean_str(value)
+                    val_texts.append(text)
+                    sentences = tokenize.sent_tokenize(text)
+                    sentences = tok_sentence(sentences)
+            
+            
+                    x = len(sentences)<max_sent_amount
+                    while x:
+                        sentences.append(np.array([0])) 
+                        x = len(sentences)<max_sent_amount
+            
+                    if len(sentences)>max_sent_amount:
+                        sentences = sentences[0:max_sent_amount]
+                    sentences = sequence.pad_sequences(sentences, maxlen=max_sen_len)
+                    val_posts.append(sentences)
+                
+                X_train = np.array(train_posts)
+                y_train = np.array(y_train)
+                X_val =  np.array(val_posts)
+                y_val = np.array(y_val)
+                
+                del train_posts
+                del val_posts
+            elif mtype =='psHAN':
+                X_train = sequence.pad_sequences(tokenizer.texts_to_sequences(X_train), maxlen=max_sen_len*max_sent_amount)
+                X_val = sequence.pad_sequences(tokenizer.texts_to_sequences(X_val), maxlen=max_sen_len*max_sent_amount)
+                X_train = np.array([line.reshape(max_sent_amount,max_sen_len) for line in X_train])
+                X_val = np.array([line.reshape(max_sent_amount,max_sen_len) for line in X_val])
+            else:
+                print('here')
+                list_tokenized_train = tokenizer.texts_to_sequences(X_train)
+                list_tokenized_val   = tokenizer.texts_to_sequences(X_val)
+                
+                X_train = sequence.pad_sequences(list_tokenized_train, maxlen=maxlen)
+                X_val   = sequence.pad_sequences(list_tokenized_val, maxlen=maxlen)
+            
+            model = dl_model(model_type=mtype, max_features=max_features, maxlen=maxlen, dropout_rate=dropout_rate, embed_dim=embed_dim, rec_units=rec_units)
+            
+            print('Fitting')
+            if train:
+                model.fit(X_train, y_train, batch_size=batch_size, epochs=epochs, shuffle=True, verbose=1)
+                model.save_weights(f'{cv_models_path}/{mtype}_fold_{c}.h5')
+            else: 
+                model.load_weights(f'{cv_models_path}/{mtype}_fold_{c}.h5')
+            
+            probs = model.predict(X_val, batch_size=batch_size, verbose=1)
+            auc_f = average_precision_score(y_val, probs)
+            
+            auc.append(auc_f)
+            roc_f = roc_auc_score(y_val, probs)
+            roc.append(roc_f)
+            
+            print(f'fold {c} average precision {round(auc_f, 3)}')
+            print(f'fold {c} roc auc {round(roc_f, 3)}')
+            
+            del model
+            K.clear_session()
+        
+        print(f'PR-C {round(np.array(auc).mean(), 3)}')
+        print(f'ROC AUC {round(np.array(roc).mean(), 3)}')
+    else:
+            X_train   = X
+            y_train   = y
+            tokenizer = keras.preprocessing.text.Tokenizer(num_words=max_features, oov_token='unknown')
+            tokenizer.fit_on_texts(X_train)
+            
+            
+            if mtype == 'HAN':
+                
+                def clean_str(string):
+                    #string = string.replace(",", ".").replace(";", ".").replace(":", ".").replace("-", ".")
+                    return string.strip().lower()
+                
+                def tok_sentence(s):
+                    temp = tokenizer.texts_to_sequences(s)
+                    if len(temp)==0:
+                        return np.array([0])
+                    return temp
+                
+                train_posts = []
+                train_labels = []
+                train_texts = []
+                
+                # FULL TRAIN
+                for i, value in enumerate(X):
+                    if(i%10000==0):
+                        print(i)
+                    text = clean_str(value)
+                    train_texts.append(text)
+                    sentences = tokenize.sent_tokenize(text)
+                    sentences = tok_sentence(sentences)
+                    x = len(sentences)<max_sent_amount
+                    while x:
+                        sentences.append(np.array([0])) 
+                        x = len(sentences)<max_sent_amount
+                
+                    if len(sentences)>max_sent_amount:
+                        sentences = sentences[0:max_sent_amount]
+                    sentences = sequence.pad_sequences(sentences, maxlen=max_sen_len)
+                
+                    train_posts.append(sentences)
+                
+                    
+                test_posts = []
+                test_labels = []
+                test_texts = []
+                    
+                    
+                #Test
+                for i, value in enumerate(X_test):
+                    if(i%10000==0):
+                        print(i)
+                    text = clean_str(value)
+                    test_texts.append(text)
+                    sentences = tokenize.sent_tokenize(text)
+                    sentences = tok_sentence(sentences)
+                    x = len(sentences)<max_sent_amount
+                    while x:
+                        sentences.append(np.array([0])) 
+                        x = len(sentences)<max_sent_amount
+                
+                    if len(sentences)>max_sent_amount:
+                        sentences = sentences[0:max_sent_amount]
+                    sentences = sequence.pad_sequences(sentences, maxlen=max_sen_len)
+                
+                    test_posts.append(sentences)
+                    
+                    
+                X_train = np.array(train_posts)
+                y_train = np.array(y)
+                X_test =  np.array(test_posts)
+                y_test = np.array(y_test)
+                
+                del train_posts
+                del test_posts
+            elif mtype =='psHAN':
+                X_train = sequence.pad_sequences(tokenizer.texts_to_sequences(X_train), maxlen=max_sen_len*max_sent_amount, padding='post')
+                X_test  = sequence.pad_sequences(tokenizer.texts_to_sequences(X_test), maxlen=max_sen_len*max_sent_amount, padding='post')
+                X_train = np.array([line.reshape(max_sent_amount, max_sen_len) for line in X_train])
+                X_test  = np.array([line.reshape(max_sent_amount, max_sen_len) for line in X_test])
+            else:
+                list_tokenized_train = tokenizer.texts_to_sequences(X_train)
+                list_tokenized_test  = tokenizer.texts_to_sequences(X_test)
+                X_train = sequence.pad_sequences(list_tokenized_train, maxlen=maxlen)
+                X_test  = sequence.pad_sequences(list_tokenized_test, maxlen=maxlen)
+                
+            y_train = np.array(y_train)
+            y_test  = np.array(y_test)
+
+            model = dl_model(model_type=mtype, max_features=max_features, maxlen=maxlen, dropout_rate=dropout_rate, embed_dim=embed_dim, rec_units=rec_units)
+            
+            print('Fitting')
+
+            if train:
+                model.fit(X_train, y_train, batch_size=batch_size, epochs=epochs, shuffle=True, verbose=1)
+                model.save_weights(f'{cv_models_path}/{mtype}.h5')
+            else: 
+                model.load_weights(f'{cv_models_path}/{mtype}.h5')
+            probs = model.predict(X_test, batch_size=batch_size, verbose=1)
+            auc_f = average_precision_score(y_test, probs)
+            roc_f = roc_auc_score(y_test, probs)
+            print('_________________________________')
+            print(f'PR-C is {round(auc_f,3)}')
+            print('_________________________________\n')
+            
+            print('_________________________________')
+            print(f'ROC AUC is {round(roc_f,3)}')
+            print('_________________________________')
+
