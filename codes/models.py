@@ -19,6 +19,7 @@ from keras import initializers as initializers, regularizers, constraints
 
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import roc_auc_score, average_precision_score
+from sklearn.metrics import precision_score, recall_score, f1_score
 
 from nltk import tokenize 
 import nltk
@@ -233,6 +234,7 @@ def train_model(X, y,  mtype, cv, nfolds, epochs, cv_models_path, train, X_test=
         kf = StratifiedKFold(n_splits=nfolds, random_state=rs)
         auc = []
         roc = []
+        fscore_ = [] 
 
         for c, (train_index, val_index) in enumerate(kf.split(X, y)):
             
@@ -333,12 +335,23 @@ def train_model(X, y,  mtype, cv, nfolds, epochs, cv_models_path, train, X_test=
                 model.load_weights(f'{cv_models_path}/{mtype}_fold_{c}.h5')
             
             probs = model.predict(X_val, batch_size=batch_size, verbose=1)
+            
+            #for threshold in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+            threshold = 0.3
+            probs_class = probs.copy()
+            probs_class[probs_class >= threshold] = 1 
+            probs_class[probs_class < threshold] = 0
+            precision = precision_score(y_val, probs_class) 
+            recall    = recall_score(y_val, probs_class)
+            fscore    = f1_score(y_val, probs_class)
+            print(f'fold {c} precision {round(precision, 3)} recall {round(recall, 3)} fscore {round(fscore,3)}')
+        
             auc_f = average_precision_score(y_val, probs)
             
             auc.append(auc_f)
             roc_f = roc_auc_score(y_val, probs)
             roc.append(roc_f)
-            
+            fscore_.append(fscore)
             print(f'fold {c} average precision {round(auc_f, 3)}')
             print(f'fold {c} roc auc {round(roc_f, 3)}')
             
@@ -347,6 +360,7 @@ def train_model(X, y,  mtype, cv, nfolds, epochs, cv_models_path, train, X_test=
         
         print(f'PR-C {round(np.array(auc).mean(), 3)}')
         print(f'ROC AUC {round(np.array(roc).mean(), 3)}')
+        print(f'FScore {round(np.array(fscore_).mean(), 3)}')
     else:
             X_train   = X
             y_train   = y
@@ -448,6 +462,16 @@ def train_model(X, y,  mtype, cv, nfolds, epochs, cv_models_path, train, X_test=
             probs = model.predict(X_test, batch_size=batch_size, verbose=1)
             auc_f = average_precision_score(y_test, probs)
             roc_f = roc_auc_score(y_test, probs)
+            
+            
+            threshold = 0.3
+            probs_class = probs.copy()
+            probs_class[probs_class >= threshold] = 1 
+            probs_class[probs_class < threshold] = 0
+            precision = precision_score(y_test, probs_class) 
+            recall    = recall_score(y_test, probs_class)
+            fscore    = f1_score(y_test, probs_class)
+            
             print('_________________________________')
             print(f'PR-C is {round(auc_f,3)}')
             print('_________________________________\n')
@@ -455,4 +479,7 @@ def train_model(X, y,  mtype, cv, nfolds, epochs, cv_models_path, train, X_test=
             print('_________________________________')
             print(f'ROC AUC is {round(roc_f,3)}')
             print('_________________________________')
-
+            
+            print('_________________________________')
+            print(f'FScore is {round(fscore,3)}')
+            print('_________________________________\n')
