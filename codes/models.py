@@ -318,7 +318,6 @@ def train_model(X, y,  mtype, cv, nfolds, epochs, cv_models_path, train, X_test=
                 X_train = np.array([line.reshape(max_sent_amount,max_sen_len) for line in X_train])
                 X_val = np.array([line.reshape(max_sent_amount,max_sen_len) for line in X_val])
             else:
-                print('here')
                 list_tokenized_train = tokenizer.texts_to_sequences(X_train)
                 list_tokenized_val   = tokenizer.texts_to_sequences(X_val)
                 
@@ -344,8 +343,8 @@ def train_model(X, y,  mtype, cv, nfolds, epochs, cv_models_path, train, X_test=
             precision = precision_score(y_val, probs_class) 
             recall    = recall_score(y_val, probs_class)
             fscore    = f1_score(y_val, probs_class)
-            print(f'fold {c} precision {round(precision, 3)} recall {round(recall, 3)} fscore {round(fscore,3)}')
-        
+            print(f' {threshold} fold {c} precision {round(precision, 3)} recall {round(recall, 3)} fscore {round(fscore,3)}')
+            
             auc_f = average_precision_score(y_val, probs)
             
             auc.append(auc_f)
