@@ -5,4 +5,4 @@
 ## ![qlogo](http://quantnet.wiwi.hu-berlin.de/graphics/quantlogo.png) **[AOBDL](codes)**
 
 For proper functionality please place data files from https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge
-into **[raw_data](raw_data)**
+into **[raw_data](raw_data)** and create an empty **data** folder
