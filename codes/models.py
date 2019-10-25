@@ -29,12 +29,14 @@ nltk.download('punkt')
 #####           ATTENTION              ######
 #############################################
 
+# Code for attention is based on the following implementation https://gist.github.com/cbaziotis/7ef97ccf71cbc14366835198c09809d2
 def dot_product(x, kernel):
     if K.backend() == 'tensorflow':
         return K.squeeze(K.dot(x, K.expand_dims(kernel)), axis=-1)
     else:
         return K.dot(x, kernel)
 
+# Code for attention is based on the following implementation https://gist.github.com/cbaziotis/7ef97ccf71cbc14366835198c09809d2
 class AttentionWithContext(Layer):
     def __init__(self,
                  W_regularizer=None, u_regularizer=None, b_regularizer=None,
