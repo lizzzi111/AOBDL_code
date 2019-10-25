@@ -5,7 +5,7 @@ Published in : 'Antisocial Online Behavior Detection using Deep Learning'
 Description : 'Antisocial Online behaivor detection. Contains data preparation for textual data in code_1_preparation.ipynb.
 Moreover includes benchmarking on different models, traditional machine learning methods: ridge regression, SVM, random
 forest, lightGBM, as well as deep learning models: GRU, LSTM, BGRU (bidirectional), BLSTM, BGRU + attention, BGRU + global
-average pooling, BGRU + global maximum pooling. Furthermore contains HAN and psHAN
+average pooling, BGRU + global maximum pooling. Furthermore contains HAN and psHAN'
 
 Keywords : 
  - cyber-bullying
