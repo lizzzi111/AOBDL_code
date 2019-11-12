@@ -156,7 +156,7 @@ def gru_keras(max_features, maxlen, bidirectional, dropout_rate, embed_dim, rec_
                   optimizer=RMSprop(clipvalue=1, clipnorm=1),
                   metrics=['acc'])
     return model
-    
+# Code for hierarchical attention network is based on the following implementation https://github.com/richliao/textClassifier/blob/master/textClassifierHATT.py   
 def make_hat(max_sent_len, max_sent_amount, max_features, embed_dim, rec_units, dropout_rate):
 
     sentence_input = Input(shape=(max_sent_len,), dtype='int32')
