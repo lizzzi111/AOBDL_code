@@ -4,7 +4,7 @@
 - All codes can be found under:
 ## ![qlogo](http://quantnet.wiwi.hu-berlin.de/graphics/quantlogo.png) **[AOBDL](codes)**
 
-- Codes separated to quantlets: 
+- Codes separated into quantlets: 
 ## ![qlogo](http://quantnet.wiwi.hu-berlin.de/graphics/quantlogo.png) **[Data Preparation](AOBDL_data_preparation)**
 ## ![qlogo](http://quantnet.wiwi.hu-berlin.de/graphics/quantlogo.png) **[Traditional Machine Learning](AOBDL_TML)**
 ## ![qlogo](http://quantnet.wiwi.hu-berlin.de/graphics/quantlogo.png) **[Deep Learning](AOBDL_DL)**
