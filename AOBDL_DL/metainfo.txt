@@ -1,4 +1,4 @@
-Name of Quantlet : AOBDL
+Name of Quantlet : AOBDL_DL
 
 Published in : 'Antisocial Online Behavior Detection using Deep Learning'
 
