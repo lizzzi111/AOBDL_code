@@ -8,3 +8,7 @@
 /data/*.zip
 /raw_data/*.zip
 Settings.ipynb
+/models_toxic/*BERT*
+/cv_models_toxic/*BERT*
+models_toxic/*BERT*
+cv_models_toxic/*BERT*
