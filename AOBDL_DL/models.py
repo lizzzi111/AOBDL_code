@@ -231,7 +231,11 @@ def dl_model(model_type='BGRU', max_features=40000, embed_dim=50, rec_units=150,
 #####            TRAINING              ######
 #############################################
 
-def train_model(X, y,  mtype, cv, nfolds, epochs, cv_models_path, train, X_test=None, y_test=None, rs=42, max_features=40000, maxlen=400, dropout_rate=0.25, rec_units=150, embed_dim=50, batch_size=256, max_sen_len=100, max_sent_amount=4):
+def train_model(X, y,  mtype, cv, epochs, 
+                cv_models_path, train, X_test=None, y_test=None, nfolds=None,
+                rs=42, max_features=40000, maxlen=400, dropout_rate=0.25, 
+                rec_units=150, embed_dim=50, batch_size=256, max_sen_len=100, 
+                max_sent_amount=4, threshold=0.3):
     if cv:
         kf = StratifiedKFold(n_splits=nfolds, random_state=rs)
         auc = []
@@ -326,7 +330,9 @@ def train_model(X, y,  mtype, cv, nfolds, epochs, cv_models_path, train, X_test=
                 X_train = sequence.pad_sequences(list_tokenized_train, maxlen=maxlen)
                 X_val   = sequence.pad_sequences(list_tokenized_val, maxlen=maxlen)
             
-            model = dl_model(model_type=mtype, max_features=max_features, maxlen=maxlen, dropout_rate=dropout_rate, embed_dim=embed_dim, rec_units=rec_units)
+            model = dl_model(model_type=mtype, max_features=max_features, 
+            maxlen=maxlen, dropout_rate=dropout_rate, embed_dim=embed_dim, 
+            rec_units=rec_units, max_sent_len=max_sen_len, max_sent_amount=max_sent_amount)
             
             print('Fitting')
             if train:
@@ -338,7 +344,7 @@ def train_model(X, y,  mtype, cv, nfolds, epochs, cv_models_path, train, X_test=
             probs = model.predict(X_val, batch_size=batch_size, verbose=1)
             
             #for threshold in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
-            threshold = 0.3
+            threshold = threshold
             probs_class = probs.copy()
             probs_class[probs_class >= threshold] = 1 
             probs_class[probs_class < threshold] = 0
@@ -362,6 +368,10 @@ def train_model(X, y,  mtype, cv, nfolds, epochs, cv_models_path, train, X_test=
         print(f'PR-C {round(np.array(auc).mean(), 3)}')
         print(f'ROC AUC {round(np.array(roc).mean(), 3)}')
         print(f'FScore {round(np.array(fscore_).mean(), 3)}')
+        
+        print(f'PR-C std {round(np.array(auc).std(), 3)}')
+        print(f'ROC AUC std {round(np.array(roc).std(), 3)}')
+        print(f'FScore std {round(np.array(fscore_).std(), 3)}')
     else:
             X_train   = X
             y_train   = y
@@ -451,7 +461,9 @@ def train_model(X, y,  mtype, cv, nfolds, epochs, cv_models_path, train, X_test=
             y_train = np.array(y_train)
             y_test  = np.array(y_test)
 
-            model = dl_model(model_type=mtype, max_features=max_features, maxlen=maxlen, dropout_rate=dropout_rate, embed_dim=embed_dim, rec_units=rec_units)
+            model = dl_model(model_type=mtype, max_features=max_features, 
+            maxlen=maxlen, dropout_rate=dropout_rate, embed_dim=embed_dim, 
+            rec_units=rec_units, max_sent_len=max_sen_len, max_sent_amount=max_sent_amount)
             
             print('Fitting')
 
@@ -465,7 +477,7 @@ def train_model(X, y,  mtype, cv, nfolds, epochs, cv_models_path, train, X_test=
             roc_f = roc_auc_score(y_test, probs)
             
             
-            threshold = 0.3
+            threshold = threshold
             probs_class = probs.copy()
             probs_class[probs_class >= threshold] = 1 
             probs_class[probs_class < threshold] = 0

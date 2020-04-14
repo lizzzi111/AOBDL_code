@@ -12,3 +12,8 @@ Settings.ipynb
 /cv_models_toxic/*BERT*
 models_toxic/*BERT*
 cv_models_toxic/*BERT*
+
+/models_twitter/*BERT*
+/cv_models_twitter/*BERT*
+models_twitter/*BERT*
+cv_models_twitter/*BERT*
