@@ -17,3 +17,8 @@ cv_models_toxic/*BERT*
 /cv_models_twitter/*BERT*
 models_twitter/*BERT*
 cv_models_twitter/*BERT*
+
+/models_facebook/*BERT*
+/cv_models_facebook/*BERT*
+models_facebook/*BERT*
+cv_models_facebook/*BERT*
