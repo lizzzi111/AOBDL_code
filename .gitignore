@@ -5,6 +5,7 @@
 /codes/deprecated_code_2_TCNN.ipynb
 /data/*.csv
 /raw_data/*.csv
+/raw_data/*.xml
 /data/*.zip
 /raw_data/*.zip
 Settings.ipynb
