@@ -1,1 +1,1 @@
-For proper workflow please place data files here from https://www.kaggle.com/c/jigsaw-toxic-comment-classification-challenge
+For proper workflow please place data files here.

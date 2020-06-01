@@ -1,0 +1,26 @@
+Name of Quantlet : AOBDL_BERT
+
+Published in : 'Antisocial Online Behavior Detection using Deep Learning'
+
+Description : 'Antisocial Online behaivor detection. This part is dedicated to pre-trained deep transformers, such as BERT and DistilBERTI'
+
+Keywords : 
+ - cyber-bullying
+ - hate speech
+ - antisocial online behavior
+ - Wikipedia Talk Pages
+ - Twitter
+ - Facebook
+ - Formspring
+ - BERT
+ - DistilBERT
+ - transformers
+ 
+
+
+Author : Elizaveta Zinovyeva
+
+Submitted :  Mon, Jun 1 2020 by Elizaveta Zinovyeva
+
+Datafile : data folder
+

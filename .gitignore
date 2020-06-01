@@ -9,22 +9,24 @@
 /data/*.zip
 /raw_data/*.zip
 Settings.ipynb
-/models_toxic/*BERT*
-/cv_models_toxic/*BERT*
-models_toxic/*BERT*
-cv_models_toxic/*BERT*
+/models/models_toxic/*BERT*
+/cv_models/cv_models_toxic/*BERT*
+models/models_toxic/*BERT*
+cv_models/cv_models_toxic/*BERT*
 
-/models_twitter/*BERT*
-/cv_models_twitter/*BERT*
-models_twitter/*BERT*
-cv_models_twitter/*BERT*
+/models/models_twitter/*BERT*
+/cv_models/cv_models_twitter/*BERT*
+models/models_twitter/*BERT*
+cv_models/cv_models_twitter/*BERT*
 
-/models_facebook/*BERT*
-/cv_models_facebook/*BERT*
-models_facebook/*BERT*
-cv_models_facebook/*BERT*
+/models/models_facebook/*BERT*
+/cv_models/cv_models_facebook/*BERT*
+models/models_facebook/*BERT*
+cv_models/cv_models_facebook/*BERT*
 
-/models_formspring/*BERT*
-/cv_models_formspring/*BERT*
-models_formspring/*BERT*
-cv_models_formspring/*BERT*
+/models/models_formspring/*BERT*
+/cv_models/cv_models_formspring/*BERT*
+models/models_formspring/*BERT*
+cv_models/cv_models_formspring/*BERT*
+
+EDA.ipynb

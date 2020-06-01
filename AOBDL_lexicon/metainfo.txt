@@ -1,0 +1,25 @@
+Name of Quantlet : AOBDL_lexicon
+
+Published in : 'Antisocial Online Behavior Detection using Deep Learning'
+
+Description : 'Antisocial Online behaivor detection. This part is dedicated to lexicon-based approaches. The list is taken from http://www.bannedwordlist.com/'
+
+Keywords : 
+ - cyber-bullying
+ - hate speech
+ - antisocial online behavior
+ - Wikipedia Talk Pages
+ - Twitter
+ - Facebook
+ - Formspring
+ - lexicon-based
+ - dictionary-based
+ 
+
+
+Author : Elizaveta Zinovyeva
+
+Submitted :  Mon, Jun 1 2020 by Elizaveta Zinovyeva
+
+Datafile : data folder
+
