@@ -2,7 +2,7 @@ Name of Quantlet : AOBDL_LIME
 
 Published in : 'Antisocial Online Behavior Detection using Deep Learning'
 
-Description : 'Antisocial Online behaivor detection. This part is dedicated to interpretability using LIME framework [Ribeiro, M. T. et. al  (2016, August). "Why should i trust you?" Explaining the predictions of any classifier.]' '
+Description : 'Antisocial Online behaivor detection. This part is dedicated to interpretability using LIME framework [Ribeiro, M. T. et. al  (2016, August). "Why should i trust you?" Explaining the predictions of any classifier.]'
 
 Keywords : 
  - cyber-bullying
